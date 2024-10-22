@@ -4,10 +4,9 @@
 
 
 from typing import Sequence
-from pymongo.collection import Collection  # type: ignore
 
 
-def top_students(mongo_collection: Collection) -> Sequence:
+def top_students(mongo_collection) -> Sequence:
     """Gets top students by average score
 
     Args:
