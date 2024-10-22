@@ -26,7 +26,7 @@ def print_log_stats(session, collection_name: str = "nginx") -> None:
 
     print(f"{logs.count_documents({})} logs\nMethods:")
     for method in methods:
-        print(f"\tMethod {method}: " +
+        print(f"\tmethod {method}: " +
               f"{logs.count_documents({'method': method})}"
               )
     print(f"{logs.count_documents({'method': 'GET', 'path': '/status'})} " +
