@@ -4,7 +4,7 @@
 
 
 from typing import Sequence
-from pymongo.collection import Collection # type: ignore
+from pymongo.collection import Collection  # type: ignore
 
 
 def top_students(mongo_collection: Collection) -> Sequence:
