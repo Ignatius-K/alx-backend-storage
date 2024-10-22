@@ -21,10 +21,13 @@ def top_students(mongo_collection) -> Sequence:
         }
     }
     sort_stage = {
-        'averageScore': -1
+        '$sort': {
+            'averageScore': -1
+        }
     }
     aggregator_pipeline = [
         add_average_score_field_stage,
         sort_stage
     ]
-    return list(mongo_collection.aggregate(aggregator_pipeline))
+    top_students = list(mongo_collection.aggregate(aggregator_pipeline))
+    return top_students
