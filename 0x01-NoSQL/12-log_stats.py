@@ -4,7 +4,7 @@
 
 
 from typing import Union
-from pymongo import MongoClient
+from pymongo import MongoClient # type: ignore
 
 
 def create_connection(host: str = "127.0.0.1", port: Union[int, str] = 27017):
