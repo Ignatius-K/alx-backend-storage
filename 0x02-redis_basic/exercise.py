@@ -7,7 +7,7 @@ from typing import Union
 import uuid
 
 
-CacheDataType = Union[bytes, float, int, str]
+CacheDataType = Union[str, bytes, int, float]
 
 
 class Cache(object):
