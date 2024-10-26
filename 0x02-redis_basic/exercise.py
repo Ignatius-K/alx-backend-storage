@@ -12,7 +12,7 @@ T = TypeVar('T')
 CacheDataType = Union[str, bytes, int, float]
 
 
-def count_calls(func: Callable) -> Callable:
+def count_calls(method: Callable) -> Callable:
     """Wrapper that counts times a function is called
 
     Args:
@@ -21,11 +21,11 @@ def count_calls(func: Callable) -> Callable:
     Return:
         The wrapped function
     """
-    @wraps(func)
+    @wraps(method)
     def wrapper(*args, **kwargs):
         if isinstance(args[0], Cache):
-            args[0]._redis.incr(func.__qualname__)
-        return func(*args, **kwargs)
+            args[0]._redis.incr(method.__qualname__)
+        return method(*args, **kwargs)
     return wrapper
 
 
