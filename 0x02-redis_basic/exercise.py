@@ -2,6 +2,7 @@
 
 """Module define the Cache service"""
 
+from functools import wraps
 import redis
 from typing import Callable, Optional, TypeVar, Union, cast
 import uuid
@@ -11,14 +12,35 @@ T = TypeVar('T')
 CacheDataType = Union[str, bytes, int, float]
 
 
-def get_str(data: bytes) -> str:
-    """Gets str from bytes"""
-    return data.decode(encoding="utf-8")
+def count_calls(func: Callable) -> Callable:
+    """Wrapper that counts times a function is called
+
+    Args:
+        func: The function to be counted
+
+    Return:
+        The wrapped function
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if isinstance(args[0], Cache):
+            args[0]._redis.incr(func.__qualname__)
+        return func(*args, **kwargs)
+    return wrapper
 
 
-def get_int(data: bytes) -> int:
-    """Gets int from bytes"""
-    return int(get_str(data))
+def call_history(func: Callable) -> Callable:
+    """Store the call history of wrapped functions"""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if not isinstance(args[0], Cache):
+            return func(*args, **kwargs)
+        cache = args[0]
+        cache._redis.rpush(f'{func.__qualname__}:inputs', str(args[1:]))
+        output = func(*args, **kwargs)
+        cache._redis.rpush(f'{func.__qualname__}:outputs', output)
+        return output
+    return wrapper
 
 
 class Cache(object):
@@ -43,6 +65,8 @@ class Cache(object):
         self._redis = redis.Redis(host=host, port=int(port))
         self._redis.flushdb()
 
+    @call_history
+    @count_calls
     def store(self, data: CacheDataType) -> str:
         """Stores data in Cache
 
