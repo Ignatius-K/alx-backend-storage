@@ -29,16 +29,15 @@ def count_calls(method: Callable) -> Callable:
     return wrapper
 
 
-def call_history(func: Callable) -> Callable:
+def call_history(method: Callable) -> Callable:
     """Store the call history of wrapped functions"""
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        if not isinstance(args[0], Cache):
-            return func(*args, **kwargs)
-        cache = args[0]
-        cache._redis.rpush(f'{func.__qualname__}:inputs', str(args[1:]))
-        output = func(*args, **kwargs)
-        cache._redis.rpush(f'{func.__qualname__}:outputs', output)
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        if not isinstance(self, Cache):
+            return method(self, *args, **kwargs)
+        self._redis.rpush(f'{method.__qualname__}:inputs', str(args))
+        output = method(self, *args, **kwargs)
+        self._redis.rpush(f'{method.__qualname__}:outputs', output)
         return output
     return wrapper
 
