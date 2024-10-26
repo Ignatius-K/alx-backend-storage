@@ -128,9 +128,8 @@ def replay(method: Callable) -> None:
     key_inputs = '{}:inputs'.format(method_name)
     key_outputs = '{}:outputs'.format(method_name)
     print(f'{method_name} was called {cache.get_int(method_name)} times:')
-    for input, output in zip(
+    for input, _ in zip(
             cast(List, cache._redis.lrange(key_inputs, 0, -1)),
             cast(List, cache._redis.lrange(key_outputs, 0, -1))
     ):
-        print(f'{method_name}(*{input.decode("utf-8")})' +
-              f'-> {output.decode("utf-8")}')
+        print(f'{method_name}(*{input.decode("utf-8")})')
