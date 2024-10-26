@@ -22,9 +22,9 @@ def count_calls(method: Callable) -> Callable:
         The wrapped function
     """
     @wraps(method)
-    def wrapper(*args, **kwargs):
-        if isinstance(args[0], Cache):
-            args[0]._redis.incr(method.__qualname__)
+    def wrapper(self, *args, **kwargs):
+        if isinstance(self, Cache):
+            self._redis.incr(method.__qualname__)
         return method(*args, **kwargs)
     return wrapper
 
