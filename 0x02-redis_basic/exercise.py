@@ -4,7 +4,7 @@
 
 from functools import wraps
 import redis
-from typing import Callable, Optional, TypeVar, Union, cast
+from typing import Callable, List, Optional, Protocol, TypeVar, Union, cast
 import uuid
 
 
@@ -107,3 +107,30 @@ class Cache(object):
             key = str(uuid.uuid4())
             if not self._redis.exists(key):
                 return key
+
+
+def replay(method: Callable) -> None:
+    """Replay the calls of the method
+
+    Prints the inputs and outputs of the methods
+    as stored in the cache store in order
+
+    Args:
+        method: The method
+    """
+    if method is None or not hasattr(method, "__self__"):
+        return
+    cache = getattr(method, "__self__")
+    if not isinstance(cache, Cache):
+        return
+
+    method_name = method.__qualname__
+    key_inputs = '{}:inputs'.format(method_name)
+    key_outputs = '{}:outputs'.format(method_name)
+    print(f'{method_name} was called {cache.get_int(method_name)} times:')
+    for input, output in zip(
+            cast(List, cache._redis.lrange(key_inputs, 0, -1)),
+            cast(List, cache._redis.lrange(key_outputs, 0, -1))
+    ):
+        print(f'{method_name}(*{input.decode("utf-8")})' +
+              f'-> {output.decode("utf-8")}')
