@@ -4,7 +4,7 @@
 
 from functools import wraps
 import redis
-from typing import Callable, List, Optional, Protocol, TypeVar, Union, cast
+from typing import Callable, List, Optional, TypeVar, Union, cast
 import uuid
 
 
