@@ -1,38 +1,45 @@
 #!/usr/bin/env python3
-'''A module with tools for request caching and tracking.
-'''
-import redis
-import requests
+
+"""Module defines `get_page` and `cache_request` methods"""
+
 from functools import wraps
-from typing import Callable
+import redis
+import requests  # type: ignore
+from typing import Callable, cast
 
 
-redis_store = redis.Redis()
-'''The module-level Redis instance.
-'''
+redis_cache = redis.Redis()
 
 
-def data_cacher(method: Callable) -> Callable:
-    '''Caches the output of fetched data.
-    '''
-    @wraps(method)
-    def invoker(url) -> str:
-        '''The wrapper function for caching the output.
-        '''
-        redis_store.incr(f'count:{url}')
-        result = redis_store.get(f'result:{url}')
-        if result:
-            return result.decode('utf-8')
-        result = method(url)
-        redis_store.set(f'count:{url}', 0)
-        redis_store.setex(f'result:{url}', 10, result)
-        return result
-    return invoker
+def cache_request(func: Callable) -> Callable:
+    """Tracks the number of calls a request is made"""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        cache_key = f'cache:{args[0]}'
+
+        cached_response = redis_cache.get(cache_key)
+        if cached_response:
+            cached_response = cast(bytes, cached_response)
+            return cached_response.decode(encoding='utf-8')
+
+        count_key = f'count:{{args[0]}}'
+        fresh_response = func(*args, **kwargs)
+        redis_cache.incr(count_key)
+        redis_cache.set(name=cache_key, value=fresh_response, ex=10)
+        return fresh_response
+    return wrapper
 
 
-@data_cacher
+@cache_request
 def get_page(url: str) -> str:
-    '''Returns the content of a URL after caching the request's response,
-    and tracking the request.
-    '''
-    return requests.get(url).text
+    """Makes request for page
+
+    Args:
+        url: The URL for the resource/page
+
+    Return:
+        The response ie HTML content
+    """
+    response: requests.Response = requests.get(url=url)
+    return response.text
