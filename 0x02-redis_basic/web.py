@@ -17,13 +17,13 @@ def cache_request(func: Callable) -> Callable:
     @wraps(func)
     def wrapper(*args, **kwargs):
         request_key = args[0]
+        redis_cache.incr(f"count:{request_key}")
 
         cached_response = cast(bytes, redis_cache.get(request_key))
         if cached_response:
             return cached_response.decode(encoding='utf-8')
 
         fresh_response = func(*args, **kwargs)
-        redis_cache.incr(f"count:{request_key}")
         redis_cache.set(name=request_key, value=fresh_response)
         redis_cache.expire(request_key, 10)
         return fresh_response
