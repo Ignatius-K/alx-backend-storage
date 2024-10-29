@@ -16,17 +16,16 @@ def cache_request(func: Callable) -> Callable:
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        count_key = f'count:{args[0]}'
         cache_key = f'cache:{args[0]}'
-
-        redis_cache.incr(count_key)
 
         cached_response = redis_cache.get(cache_key)
         if cached_response:
             cached_response = cast(bytes, cached_response)
             return cached_response.decode(encoding='utf-8')
 
+        count_key = f'count:{args[0]}'
         fresh_response = func(*args, **kwargs)
+        redis_cache.incr(count_key)
         redis_cache.set(name=cache_key, value=fresh_response, ex=10)
         return fresh_response
     return wrapper
