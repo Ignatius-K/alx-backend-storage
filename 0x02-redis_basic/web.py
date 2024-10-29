@@ -1,45 +1,36 @@
 #!/usr/bin/env python3
-
-"""Module defines `get_page` and `cache_request` methods"""
-
-from functools import wraps
+"""
+web cache and tracker
+"""
+import requests
 import redis
-import requests  # type: ignore
-from typing import Callable, cast
+from functools import wraps
+
+store = redis.Redis()
 
 
-redis_cache = redis.Redis()
+def count_url_access(method):
+    """ Decorator counting how many times
+    a URL is accessed """
+    @wraps(method)
+    def wrapper(url):
+        cached_key = "cached:" + url
+        cached_data = store.get(cached_key)
+        if cached_data:
+            return cached_data.decode("utf-8")
 
+        count_key = "count:" + url
+        html = method(url)
 
-def cache_request(func: Callable) -> Callable:
-    """Tracks the number of calls a request is made"""
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        cache_key = f'cache:{args[0]}'
-
-        cached_response = redis_cache.get(cache_key)
-        if cached_response:
-            cached_response = cast(bytes, cached_response)
-            return cached_response.decode(encoding='utf-8')
-
-        count_key = f'count:{args[0]}'
-        fresh_response = func(*args, **kwargs)
-        redis_cache.incr(count_key)
-        redis_cache.set(name=cache_key, value=fresh_response, ex=10)
-        return fresh_response
+        store.incr(count_key)
+        store.set(cached_key, html)
+        store.expire(cached_key, 10)
+        return html
     return wrapper
 
 
-@cache_request
+@count_url_access
 def get_page(url: str) -> str:
-    """Makes request for page
-
-    Args:
-        url: The URL for the resource/page
-
-    Return:
-        The response ie HTML content
-    """
-    response: requests.Response = requests.get(url=url)
-    return response.text
+    """ Returns HTML content of a url """
+    res = requests.get(url)
+    return res.text
